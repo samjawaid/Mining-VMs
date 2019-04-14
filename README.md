@@ -4,7 +4,7 @@ This project is to develop a tool that benchmarks virtual machines for unbiased,
 
 ## Installation
 
-Download [this](https://github.tamu.edu/natkinson20/Mining-VMs/blob/master/run.sh) file and run in linux terminal using the following command:
+Download [this](https://github.com/samjawaid/Mining-VMs/blob/master/run.sh) file and run in linux terminal using the following command:
 
 
 ```bash
