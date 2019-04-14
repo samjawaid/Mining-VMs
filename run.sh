@@ -2,7 +2,7 @@
 sudo apt-get install git
  
 #clone this repository in the current directory  
-git clone https://github.tamu.edu/natkinson20/Mining-VMs.git
+git clone https://github.com/samjawaid/Mining-VMs.git
  
 #installing the build requisites
 sudo apt install awscli
