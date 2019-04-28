@@ -2,7 +2,7 @@
 sudo apt-get install git
  
 #clone this repository in the current directory  
-git clone https://github.com/samjawaid/Mining-VMs.git
+git clone https://github.tamu.edu/natkinson20/Mining-VMs.git
  
 #installing the build requisites
 sudo apt install awscli
@@ -16,24 +16,22 @@ pip3 install boto3
 pip3 install requests
 pip install awscli boto3
 
-
-
-
 # change directory to miner/src 
 cd  /home/
-
-# build from source
 
 # install the tool in /usr/local/bin
 sudo make install
 
+#Allow accesss to test benchmark script
 chmod +x ~/Mining-VMs/compute.sh
 chmod +x ~/Mining-VMs/network.sh
 chmod +x ~/Mining-VMs/storage.sh
 chmod +x ~/Mining-VMs/Ubuntu_update.sh
 
+#Create Home Environment (49.3 Empty Files)
 unzip -j ~/Mining-VMs/homefiles.zip -d ~
 
+#Allow accesss to Home Environment
 chmod +x ~/ComputeCSV.txt
 chmod +x ~/NetworkCSV.txt
 chmod +x ~/StorageCSV.txt
@@ -50,6 +48,5 @@ chmod +x ~/NetworkSSHOutput.txt
 chmod +700 ~/results.txt
 chmod +x ~/profile.txt
 
-
-
+# Launch GUI
 python3 ~/Mining-VMs/gui.py
