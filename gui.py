@@ -97,54 +97,231 @@ def run_benchmarks(frame,compute,network,storage,IDAws,SecretKey,Region):
           #print(securitygroup)
           #print('aws ec2 authorize-security-group-ingress --group-id ' +securitygroup +' --protocol tcp --port 5201 --cidr 0.0.0.0/0')
 
-    subprocess.Popen(['aws ec2 authorize-security-group-ingress --group-id ' +securitygroup +' --protocol tcp --port 5201 --cidr 0.0.0.0/0'], shell=True)
-
-    #SSH
-    sleep(60)
-    subprocess.Popen(['chmod 400 ' +PrivateKey], shell=True)
-    subprocess.Popen(['ssh -o StrictHostKeyChecking=no -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/Ubuntu_update.sh > update.txt"], shell=True)
-    t1 = time.time()
-    ttl=t1-t0
-    print('time to launch: '+str(round(ttl,2))+' seconds')
-    sleep(300)
-
-    if compute.get():
-        subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/comptest.sh > CompTestSSHoutput.txt"], shell=True)
-        print('compute')
-        sleep(300)
-        subprocess.Popen(['kill -INT 888'], shell=True)
-    if storage.get():
-        print('storage')
-        subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/storagetest.sh > StorageSSHOutput.txt"], shell=True)
-        sleep(600)
-        subprocess.Popen(['kill -INT 888'], shell=True)
-    if network.get():
-        print('network')
-        subprocess.Popen(['chmod 400 ' +PrivateKey], shell=True)
-        subprocess.Popen(['ssh -o StrictHostKeyChecking=no -i "'+privname+'.pem" ubuntu@'+serverdns+" 'bash -s' < ~/Mining-VMs/Ubuntu_update.sh > update.txt"], shell=True)
-        sleep(300)
-        print('ssh -i "'+privname+'.pem" ubuntu@'+serverdns+" iperf3 -s -1")
-        subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+serverdns+" iperf3 -s -1"], shell=True)
-        sleep(10)
-        print('ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" iperf3 -c "+serverip+" > NetworkSSHOutput.txt")
-        subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" iperf3 -c "+serverip+" > NetworkSSHOutput.txt"], shell=True)
-        sleep(10)
-
-    print('-------PARSING TEXT-----------')
+    subprocess.Popen(['aws ec2 authorize-security-group-ingress --group-id ' +securitygroup +' --protocol tcp --port 5201 --cidr 0.0.0.0/0 2>/dev/null'], shell=True)
+#    subprocess.Popen(['aws ec2 authorize-security-group-ingress --group-id ' +securitygroup +' --protocol tcp --port 5201 --cidr 0.0.0.0/0'], shell=True)
 
     with open("StorageCSV.txt","w") as storage, \
          open("ComputeCSV.txt","w") as compute, \
          open("NetworkCSV.txt","w") as network:
-        storage.write("0,0,0,0,0,0,0,0,0,0,0,0")
-        network.write("0,0,0,0,0")
+        storage.write("0,0,0,0,0,")
+        network.write("0,0,0,0,")
         compute.write("0,0,0,0,0,0")
-        
-    if compute.get():
-        parse_cpu()
-    if storage.get():
-        parse_storage()
-    if network.get():
-        parse_network()
+
+    #SSH
+    sleep(60)
+    print("---SSH & UPDATING VM 1----")
+    subprocess.Popen(['chmod 400 ' +PrivateKey], shell=True)
+    subprocess.Popen(['ssh -o StrictHostKeyChecking=no -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/Ubuntu_update.sh > update.txt 2>/dev/null"], shell=True)
+#    subprocess.Popen(['ssh -o StrictHostKeyChecking=no -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/Ubuntu_update.sh > update.txt"], shell=True)
+
+
+    t1 = time.time()
+    ttl=t1-t0
+    print('time to launch: '+str(round(ttl,2))+' seconds')
+    print("---WAIT 5 MINUTES FOR UPDATE----")
+    sleep(300)
+    print("---UPDATE 1 FINISHED----")
+    #if compute.get():
+    print("---STARTING COMPUTATIONAL TEST----")
+    subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/comptest.sh > CompTestSSHoutput.txt 2>/dev/null"], shell=True)
+    print("---WAIT 5 MINUTES----")
+    sleep(300)
+    print("---COMPUTATIONAL TEST SUCCESSFUL----")
+        #parse_cpu()
+    CPUlines = [] #Declare an empty list named "lines"
+    with open ('CompTestSSHoutput.txt', 'rt') as in_file:  #Open file
+        for line in in_file: #For each line of text store in a string variable named "line", and
+            CPUlines.append(line)  #add that line to our list of lines.
+
+    text_file = open("ComputeCSV.txt", "w")
+
+    #sysbench CPU Speed Events per second
+    lines14 = CPUlines[14];
+    sysbench = lines14[23:31];
+    text_file.write(sysbench)
+
+    #comma
+    text_file.write(",")
+
+    #space
+    text_file.write(" ")
+
+    #Average Latency
+    line22 = CPUlines[22];
+    AverageLat = line22[47:51];
+    text_file.write(AverageLat)
+
+    #comma
+    text_file.write(",")
+
+    #space
+    text_file.write(" ")
+
+    #Processor Frequency
+    line38 = CPUlines[38];
+    ProFreq = line38[14:22];
+    text_file.write(ProFreq)
+
+    #comma
+    text_file.write(",")
+
+    #space
+    text_file.write(" ")
+
+    #RAM Amount
+    line39 = CPUlines[39];
+    RAM = line39[14:17];
+    text_file.write(RAM)
+
+    #comma
+    text_file.write(",")
+
+    #space
+    text_file.write(" ")
+
+    #Average CPU Write Speed
+    line111 = CPUlines[111];
+    CPUWrite = line111[16:21];
+    text_file.write(CPUWrite)
+
+    #comma
+    text_file.write(",")
+
+    #space
+    text_file.write(" ")
+
+    #CPU Average Usage Percent
+    line128 = CPUlines[128];
+    CPUPercent = line128[10:15];
+    text_file.write(CPUPercent)
+
+    text_file.close()
+    #if storage.get():
+    print("---STARTING STORAGE TEST----")
+    subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" 'bash -s' < ~/Mining-VMs/storagetest.sh > StorageSSHOutput.txt 2>/dev/null"], shell=True)
+    print("---WAIT 10 MINUTES----")
+    sleep(600)
+    lines = [] #Declare an empty list named "lines"
+    with open ('StorageSSHOutput.txt', 'rt') as in_file:  #Open file
+    	for line in in_file: #For each line of text store in a string variable named "line", and
+        	lines.append(line)  #add that line to our list of lines.
+
+    text_file = open("StorageCSV.txt", "w")
+
+    #sysbench Bandwidth (MiB/s)
+    test = lines[19];
+    sysbench = test[27:35];
+    text_file.write(sysbench)
+
+    #comma
+    line37 = lines[37];
+    comma = line37[26];
+    text_file.write(comma)
+
+    #space
+    text_file.write(" ")
+
+    #sequential read IOPs
+    line47 = lines[47];
+    SeqIOPs = line47[14:18];
+    text_file.write(SeqIOPs)
+
+    #comma
+    line37 = lines[37];
+    comma = line37[26];
+    text_file.write(comma)
+
+    #space
+    text_file.write(" ")
+
+    #sequential read BW (MiB/s)
+    SeqBW = line47[23:27];
+    text_file.write(SeqBW)
+
+    #comma
+    line37 = lines[37];
+    comma = line37[26];
+    text_file.write(comma)
+
+    #space
+    text_file.write(" ")
+
+    #sequential write IOPs
+    line84 = lines[84];
+    SeqWIOPs = line84[14:18];
+    text_file.write(SeqWIOPs)
+
+    #comma
+    line37 = lines[37];
+    comma = line37[26];
+    text_file.write(comma)
+
+    #space
+    text_file.write(" ")
+
+    #sequential write BW
+    SeqWBW = line84[23:27];
+    text_file.write(SeqWBW)
+
+    text_file.close()
+    print("---STORAGE TEST SUCCESSFUL----")
+        #parse_storage()
+
+
+    #if network.get():
+    print("---STARTING NETWORK TEST----")
+    print("---SSH & UPDATE VM 2----")
+    subprocess.Popen(['chmod 400 ' +PrivateKey], shell=True)
+    subprocess.Popen(['ssh -o StrictHostKeyChecking=no -i "'+privname+'.pem" ubuntu@'+serverdns+" 'bash -s' < ~/Mining-VMs/Ubuntu_update.sh > update.txt 2>/dev/null"], shell=True)
+    print("---WAIT 5 MINUTES----")
+    sleep(300)
+    print("---UPDATE 2 FINISHED----")
+    print("---NETWORK TEST SERVER SETUP----")
+    print('ssh -i "'+privname+'.pem" ubuntu@'+serverdns+" iperf3 -s -1")
+    subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+serverdns+" iperf3 -s -1"], shell=True)
+    sleep(10)
+    print("---NETWORK TEST CLIENT SETUP----")
+    print('ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" iperf3 -c "+serverip+" > NetworkSSHOutput.txt")
+    subprocess.Popen(['ssh -i "'+privname+'.pem" ubuntu@'+pubdns+" iperf3 -c "+serverip+" > NetworkSSHOutput.txt"], shell=True)
+    sleep(60)
+    print("---NETWORK TEST SUCCESSFUL----")
+        #parse_network()
+    Netlines = [] #Declare an empty list named "lines"
+    with open ('NetworkSSHOutput.txt', 'rt') as in_file:  #Open file lorem.txt for reading of text data.
+        for line in in_file: #For each line of text store in a string variable named "line", and
+            Netlines.append(line)  #add that line to our list of lines.
+
+    text_file = open("NetworkCSV.txt", "w")
+
+    #Sender Transfer Amount
+    lines15 = Netlines[15];
+    TransAmntS = lines15[25:29];
+    text_file.write(TransAmntS)
+
+    #comma
+    text_file.write(",")
+
+    #Sender Brandwidth Amount
+    TransAmntS = lines15[39:42];
+    text_file.write(TransAmntS)
+
+    #comma
+    text_file.write(",")
+
+    #Reciever Transfer Amount
+    lines16 = Netlines[16];
+    TransAmntR = lines16[25:29];
+    text_file.write(TransAmntR)
+
+    #comma
+    text_file.write(",")
+
+    #Reciever Brandwidth Amount
+    TransAmntR = lines16[39:42];
+    text_file.write(TransAmntR)
+
+    text_file.close()
+
 
     print('-------ALL TEST FINISHED-----------')
 
@@ -229,7 +406,7 @@ def CostEnter():
     global ttl
     instance_id = 'ejkl34jl'
     ttl = '69'
-    
+
 ############ DATA TRANSFERS ###########
 def comboAll():
     global instance_id, ttl
@@ -241,6 +418,9 @@ def comboAll():
 
 ### f5 formatting
 def format_results(f6):
+    #parse_cpu()
+    #parse_network()
+    #parse_storage()
     #combine 3 csvs
     combo()
     #combine results with general data (timestamp and ttl)
@@ -257,8 +437,8 @@ def ExportData():
         content = content.replace(',','\n')
         content = content.replace(' ','')
         lines = content.splitlines()
-        lines2 = content.splitlines()
-        lines2[0] = 'Table2,'
+        lines2 = ['nein!']*22
+        lines2[0] = 'Table3,'
         lines2[1] = 'IDAws=' + lines[0]
         lines2[2] = ',InstanceID=' + lines[1]
         lines2[3] = ',Cost=' + lines[2]
@@ -269,23 +449,36 @@ def ExportData():
         lines2[8] = ',SeqReadBw=' + lines[7]
         lines2[9] = ',SeqWriteIOPs=' + lines[8]
         lines2[10] = ',SeqWriteBw='+ lines[9]
-        lines2[11] = ',RandReadIOPs=' + lines[10]
-        lines2[12] = ',RandReadBW='+ lines[11]
-        lines2[13] = ',RandWriteIOPs=' + lines[12]
-        lines2[14] = ',RandWriteBW=' + lines[13]
-        lines2[15] = ',RandRWReadIOPs=' + lines[14]
-        lines2[16] = ',RandRWReadBW=' + lines[15]
-        lines2[17] = ',RandRWWriteIOPs=' + lines[16]
-        lines2[18] = ',RandRWWriteBW=' + lines[17]
-       # lines2[18] = ' 1483229160000000000'
-        for item in lines2[0:19]:
+        
+        lines2[11] = ',TransferSender=' + lines[10]
+        lines2[12] = ',BWSender=' + lines[11]
+        lines2[13] = ',TransferReceiver=' + lines[12]
+        lines2[14] = ',BWReceiver=' + lines[13]
+
+        lines2[15] = ',EventsPerSec=' + lines[14]
+        lines2[16] = ',AvgLatency=' + lines[15]
+        lines2[17] = ',ProcessorFreq=' + lines[16]
+        lines2[18] = ',RAMAmount=' + lines[17]
+        lines2[19] = ',AvgCPUWriteSpeed=' + lines[18]
+        lines2[20] = ',AvgUsagePercentCPU=' + lines[19]
+    #awsd6532,ejkl34jl,insID,0.25,useast,69,13290.24,3084,48.2,3056,23.9,20813.71,0.05,2400.1,983
+       #lines2[11] = ',RandReadIOPs=' + lines[10]
+        #lines2[12] = ',RandReadBW='+ lines[11]
+        #lines2[13] = ',RandWriteIOPs=' + lines[12]
+        #lines2[14] = ',RandWriteBW=' + lines[13]
+        #lines2[15] = ',RandRWReadIOPs=' + lines[14]
+        #lines2[16] = ',RandRWReadBW=' + lines[15]
+        #lines2[17] = ',RandRWWriteIOPs=' + lines[16]
+        #lines2[18] = ',RandRWWriteBW=' + lines[17]
+        # lines2[18] = ' 1483229160000000000'
+        for item in lines2[0:21]:
             file1.write("%s" % item)
 
     print("start")
     subprocess.Popen(['sudo influxd'], shell=True)
     #subprocess.Popen(['influxd'], shell=True)
     #pause program to let influx load up
-    time.sleep(4)
+    time.sleep(25)
     print("influx loaded")
     data = {
       'q': 'CREATE DATABASE "DataBench"'
@@ -487,8 +680,9 @@ def runBar():
         bar['value'] = x
         f5.after(50000, increment)
 
-btnProgress = Button(f5, text="Run Bar", command= runBar)
-btnProgress.grid(column=1, row=4, padx=0,pady=15,sticky=SW)
+#btnProgress = Button(f5, text="Run Bar", command= runBar)
+#btnProgress.grid(column=1, row=4, padx=0,pady=15,sticky=SW)
+runBar()
 
 btnNext = Button(f5, text="Next", command=lambda:format_results(f6))
 btnNext.grid(column=1, row=7, padx=0,pady=15,sticky=SE)
